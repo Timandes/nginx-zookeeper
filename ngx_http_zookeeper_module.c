@@ -104,11 +104,11 @@ static ngx_int_t ngx_http_zookeeper_init_module(ngx_cycle_t *cycle)
         return NGX_OK;
     }
     if (NULL == zmf->cHost) {
-        ngx_log_error(NGX_LOG_ERROR, cycle->log, 0, "Impossible cHost");
+        ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Impossible cHost");
         return NGX_ERROR;
     }
     if (NULL == zmf->cPath) {
-        ngx_log_error(NGX_LOG_ERROR, cycle->log, 0, "Impossible cPath");
+        ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Impossible cPath");
         return NGX_ERROR;
     }
 
