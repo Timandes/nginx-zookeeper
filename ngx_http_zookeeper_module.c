@@ -103,6 +103,14 @@ static ngx_int_t ngx_http_zookeeper_init_module(ngx_cycle_t *cycle)
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "No zookeeper path was given");
         return NGX_OK;
     }
+    if (NULL == zmf->cHost) {
+        ngx_log_error(NGX_LOG_ERROR, cycle->log, 0, "Impossible cHost");
+        return NGX_ERROR;
+    }
+    if (NULL == zmf->cPath) {
+        ngx_log_error(NGX_LOG_ERROR, cycle->log, 0, "Impossible cPath");
+        return NGX_ERROR;
+    }
 
     // init zookeeper
     zmf->handle = zookeeper_init(zmf->cHost, NULL, 10000, 0, NULL, 0);
@@ -143,8 +151,10 @@ static void *ngx_http_zookeeper_create_main_conf(ngx_conf_t *cf)
 
     retval->host.len = 0;
     retval->host.data = NULL;
+    retval->cHost = NULL;
     retval->path.len = 0;
     retval->path.data = NULL;
+    retval->cPath = NULL;
     retval->handle = NULL;
     return retval;
 }
@@ -154,20 +164,31 @@ static char *ngx_http_zookeeper_init_main_conf(ngx_conf_t *cf, void *conf)
 {
     ngx_http_zookeeper_main_conf_t *mf = conf;
 
-
+    // host
     if (mf->host.len <= 0)
-        ngx_log_stderr(0, "No zookeeper host was given");
+        ngx_log_stderr(0, "WARNING: No zookeeper host was given");
+    else {
+        mf->cHost = malloc(mf->host.len + 1);
+        if (NULL == mf->cHost) {
+            ngx_log_stderr(0, "Fail to malloc for host");
+            return NGX_CONF_ERROR;
+        }
+        memcpy(mf->cHost, mf->host.data, mf->host.len);
+        mf->cHost[mf->host.len] = 0;
+    }
+
+    // path
     if (mf->path.len <= 0)
-        ngx_log_stderr(0, "No zookeeper path was given");
-
-    mf->cHost = malloc(mf->host.len + 1);
-    memcpy(mf->cHost, mf->host.data, mf->host.len);
-    mf->cHost[mf->host.len] = 0;
-
-    mf->cPath = malloc(mf->path.len + 1);
-    memcpy(mf->cPath, mf->path.data, mf->path.len);
-    mf->cPath[mf->path.len] = 0;
-
+        ngx_log_stderr(0, "WARNING: No zookeeper path was given");
+    else {
+        mf->cPath = malloc(mf->path.len + 1);
+        if (NULL == mf->cPath) {
+            ngx_log_stderr(0, "Fail to malloc for path");
+            return NGX_CONF_ERROR;
+        }
+        memcpy(mf->cPath, mf->path.data, mf->path.len);
+        mf->cPath[mf->path.len] = 0;
+    }
     
 
     return NGX_CONF_OK;
