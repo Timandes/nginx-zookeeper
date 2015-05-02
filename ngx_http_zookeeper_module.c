@@ -7,12 +7,21 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-#include <zookeeper.h>
+#include <zookeeper/zookeeper.h>
+
+static char *ngx_http_zookeeper_path_parser(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+static char *ngx_http_zookeeper_host_parser(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+static ngx_int_t ngx_http_zookeeper_init_module(ngx_cycle_t *cycle);
+static void ngx_http_zookeeper_exit_master(ngx_cycle_t *cycle);
+static void *ngx_http_zookeeper_create_main_conf(ngx_conf_t *cf);
+static char *ngx_http_zookeeper_init_main_conf(ngx_conf_t *cf, void *conf);
 
 // Configurations
 typedef struct {
     ngx_str_t host;
     ngx_str_t path;
+    char *cHost;
+    char *cPath;
     zhandle_t *handle;
 } ngx_http_zookeeper_main_conf_t;
 
@@ -96,14 +105,14 @@ static ngx_int_t ngx_http_zookeeper_init_module(ngx_cycle_t *cycle)
     }
 
     // init zookeeper
-    zmf->handle = zookeeper_init(zmf->host, NULL, 10000, 0, NULL, 0);
+    zmf->handle = zookeeper_init(zmf->cHost, NULL, 10000, 0, NULL, 0);
     if (NULL == zmf->handle) {
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Fail to init zookeeper instance");
         return NGX_OK;
     }
 
     // create node
-    status = zoo_create(zmf->handle, zmf->path.data, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0);
+    status = zoo_create(zmf->handle, zmf->cPath, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0);
     if (ZOK != status) {
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Fail to create zookeeper node");
         zookeeper_close(zmf->handle);
@@ -146,10 +155,20 @@ static char *ngx_http_zookeeper_init_main_conf(ngx_conf_t *cf, void *conf)
     ngx_http_zookeeper_main_conf_t *mf = conf;
 
 
-    if (conf->host.len <= 0)
+    if (mf->host.len <= 0)
         ngx_log_stderr(0, "No zookeeper host was given");
-    if (conf->path.len <= 0)
+    if (mf->path.len <= 0)
         ngx_log_stderr(0, "No zookeeper path was given");
+
+    mf->cHost = malloc(mf->host.len + 1);
+    memcpy(mf->cHost, mf->host.data, mf->host.len);
+    mf->cHost[mf->host.len] = 0;
+
+    mf->cPath = malloc(mf->path.len + 1);
+    memcpy(mf->cPath, mf->path.data, mf->path.len);
+    mf->cPath[mf->path.len] = 0;
+
+    
 
     return NGX_CONF_OK;
 }
