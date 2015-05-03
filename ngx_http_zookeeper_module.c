@@ -94,7 +94,16 @@ static ngx_int_t ngx_http_zookeeper_init_module(ngx_cycle_t *cycle)
     ngx_http_zookeeper_main_conf_t *zmf;
     int status;
 
-    zmf = (ngx_http_zookeeper_main_conf_t *)ngx_get_conf(cycle->conf_ctx, ngx_http_zookeeper_module);
+    if (ngx_test_config) // ignore znode registering when testing configuration
+        return NGX_OK;
+
+    zmf = (ngx_http_zookeeper_main_conf_t *)ngx_http_cycle_get_module_main_conf(cycle, ngx_http_zookeeper_module);
+    if (NULL == zmf) {
+        ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "ngx_http_zookeeper_module: Fail to get configuration");
+        ngx_log_stderr(0, "ngx_http_zookeeper_module: Fail to get configuration");
+        return NGX_ERROR;
+    }
+
     if (zmf->host.len <= 0) {
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "No zookeeper host was given");
         return NGX_OK;
@@ -105,10 +114,12 @@ static ngx_int_t ngx_http_zookeeper_init_module(ngx_cycle_t *cycle)
     }
     if (NULL == zmf->cHost) {
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Impossible cHost");
+        ngx_log_stderr(0, "Impossible cHost");
         return NGX_ERROR;
     }
     if (NULL == zmf->cPath) {
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Impossible cPath");
+        ngx_log_stderr(0, "Impossible cPath");
         return NGX_ERROR;
     }
 
@@ -116,16 +127,18 @@ static ngx_int_t ngx_http_zookeeper_init_module(ngx_cycle_t *cycle)
     zmf->handle = zookeeper_init(zmf->cHost, NULL, 10000, 0, NULL, 0);
     if (NULL == zmf->handle) {
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Fail to init zookeeper instance");
-        return NGX_OK;
+        ngx_log_stderr(0, "Fail to init zookeeper instance");
+        return NGX_ERROR;
     }
 
     // create node
     status = zoo_create(zmf->handle, zmf->cPath, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0);
     if (ZOK != status) {
         ngx_log_error(NGX_LOG_WARN, cycle->log, 0, "Fail to create zookeeper node");
+        ngx_log_stderr(0, "Fail to create zookeeper node");
         zookeeper_close(zmf->handle);
         zmf->handle = NULL;
-        return NGX_OK;
+        return NGX_ERROR;
     }
 
     return NGX_OK;
@@ -136,8 +149,9 @@ static void ngx_http_zookeeper_exit_master(ngx_cycle_t *cycle)
 {
     ngx_http_zookeeper_main_conf_t *zmf;
 
-    zmf = (ngx_http_zookeeper_main_conf_t *)ngx_get_conf(cycle->conf_ctx, ngx_http_zookeeper_module);
-    if (zmf->handle)
+    zmf = (ngx_http_zookeeper_main_conf_t *)ngx_http_cycle_get_module_main_conf(cycle, ngx_http_zookeeper_module);
+    if (zmf
+            && zmf->handle)
         zookeeper_close(zmf->handle);
 }
 
@@ -146,8 +160,10 @@ static void *ngx_http_zookeeper_create_main_conf(ngx_conf_t *cf)
 {
     ngx_http_zookeeper_main_conf_t *retval;
     retval = ngx_pcalloc(cf->pool, sizeof(ngx_http_zookeeper_main_conf_t));
-    if (NULL == retval)
-        return NGX_CONF_ERROR;
+    if (NULL == retval) {
+        ngx_log_stderr(0, "Fail to create main conf of nginx-zookeeper");
+        return NULL;
+    }
 
     retval->host.len = 0;
     retval->host.data = NULL;
@@ -156,6 +172,7 @@ static void *ngx_http_zookeeper_create_main_conf(ngx_conf_t *cf)
     retval->path.data = NULL;
     retval->cPath = NULL;
     retval->handle = NULL;
+
     return retval;
 }
 
@@ -163,6 +180,12 @@ static void *ngx_http_zookeeper_create_main_conf(ngx_conf_t *cf)
 static char *ngx_http_zookeeper_init_main_conf(ngx_conf_t *cf, void *conf)
 {
     ngx_http_zookeeper_main_conf_t *mf = conf;
+
+
+    if (NULL == mf) {
+        ngx_log_stderr(0, "Impossible conf");
+        return NGX_CONF_ERROR;
+    }
 
     // host
     if (mf->host.len <= 0)
