@@ -5,6 +5,7 @@ env:
 before_script:
     - ./.travis/install_libzookeeper.sh $LIBZOOKEEPER_VERSION
     - ./.travis/download_nginx.sh $NGINX_VERSION
+    - export LIBZOOKEEPER_PREFIX=${HOME}/libzookeeper-${LIBZOOKEEPER_VERSION}
 
 script:
     - cd nginx-$NGINX_VERSION && ./configure --add-module=../ && make

@@ -12,6 +12,4 @@ cd ${PACKAGE_NAME}/src/c
     make install || exit 1
 cd ../../..
 
-export LIBZOOKEEPER_PREFIX=${LIBZOOKEEPER_PREFIX}
-
 exit 0
