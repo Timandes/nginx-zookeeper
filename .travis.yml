@@ -7,4 +7,4 @@ before_script:
     - ./.travis/download_nginx.sh $NGINX_VERSION
 
 script:
-    - cd nginx-$NGINX_VERSION && ./configure --add-module=../ && make && make install
+    - cd nginx-$NGINX_VERSION && ./configure --add-module=../ && make
