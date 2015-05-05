@@ -1,6 +1,8 @@
 Nginx Zookeeper Module
 ----
 
+[![Build Status](https://api.travis-ci.org/Timandes/nginx-zookeeper.svg?branch=master)](https://travis-ci.org/Timandes/nginx-zookeeper)
+
 Add zookeeper support for Nginx Server.
 
 Requirements
