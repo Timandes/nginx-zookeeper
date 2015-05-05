@@ -1,6 +1,10 @@
 ngx_addon_name=ngx_http_zookeeper_module
 HTTP_MODULES="$HTTP_MODULES ngx_http_zookeeper_module"
 NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/ngx_http_zookeeper_module.c"
-LIBZOOKEEPER_PREFIX="/usr/local/libzookeeper-${LIBZOOKEEPER_VERSION}"
+
+if [ "$LIBZOOKEEPER_PREFIX" == "" ]; then
+    LIBZOOKEEPER_PREFIX="/usr/local/libzookeeper-3.5.0"
+fi
+
 CORE_INCS="$CORE_INCS $LIBZOOKEEPER_PREFIX/include"
 CORE_LIBS="$CORE_LIBS -Wl,-R$LIBZOOKEEPER_PREFIX/lib -L$LIBZOOKEEPER_PREFIX/lib -lzookeeper_mt"
