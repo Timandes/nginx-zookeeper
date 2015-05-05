@@ -6,10 +6,10 @@ LIBZOOKEEPER_PREFIX=${HOME}/lib${PACKAGE_NAME}
 
 wget http://apache.fayea.com/zookeeper/${PACKAGE_NAME}/${PACKAGE_NAME}.tar.gz || exit 1
 tar xvf ${PACKAGE_NAME}.tar.gz || exit 1
-pushd ${PACKAGE_NAME}/src/c
+cd ${PACKAGE_NAME}/src/c
     ./configure --prefix=${LIBZOOKEEPER_PREFIX} || exit 1
     make || exit 1
     make install || exit 1
-popd
+cd ../../..
 
 exit 0
