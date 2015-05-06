@@ -13,6 +13,7 @@ Requirements
 Install
 ====
 
+    export LIBZOOKEEPER_VERSION=/path/to/libzookeeper
     $ ./configure --add-module=/path/to/nginx-zookeeper
     $ make
     # make install
